@@ -1,0 +1,173 @@
+; *********************************************
+; *  314 Principles of Programming Languages  *
+; *  Fall 2017                                *
+; *  Author: Ulrich Kremer                    *
+; *********************************************
+;; -----------------------------------------------------
+;; ENVIRONMENT
+;; contains "ltv", "vtl",and "reduce" definitions
+(load "include.ss")
+
+;; contains a test document consisting of three paragraphs. 
+(load "document.ss")
+
+;; contains a test-dictionary, which has a much smaller dictionary for testing
+;; the dictionary is needed for spell checking
+(load "test-dictionary.ss")
+
+;; (load "dictionary.ss") ;; the real thing with 45,000 words
+
+
+;; -----------------------------------------------------
+;; HELPER FUNCTIONS
+
+;; *** CODE FOR ANY HELPER FUNCTION GOES HERE ***
+
+(define shift
+  (lambda (value)
+    (lambda (letter)
+      (vtl ( modulo (+ value (ltv letter))
+                    26))
+      )))
+
+(define e-shift
+  (lambda (position)
+          (+ (- 26 position) 4)))
+
+(define (bruteshift word n)
+  (cond ((> n 26) #f)
+        ((spell-checker (map (shift n) word)) n)
+        (else (bruteshift word (+ n 1)))))
+
+
+
+(define countWrd
+  (lambda (li word)
+    (if (null? word)
+        0
+        (+ (if (equal? (car word) li) 1 0) (countWrd li (cdr word))))))
+
+
+
+(define counterLtr
+  (lambda (para li)
+      (if (null? para)
+          '()
+          (append (list (countWrd li (car para)))(counterLtr (cdr para) li)))))
+
+(define eIndex
+  (lambda (li a b maxVal)
+    (if (> 26 a)
+        (if (< maxVal (car li)) (eIndex (cdr li) (+ 1 a) a (car li)) (eIndex (cdr li) (+ 1 a)  b maxVal))
+        (- 4 b)))) ;; (Gen-Decoder-B paragraph)
+
+
+
+;; -----------------------------------------------------
+;; SPELL CHECKER FUNCTION
+
+;;check a word's spell correctness
+;;INPUT:a word(a global variable "dictionary" is included in the file "test-dictionary.ss", and can be used directly here)
+;;OUTPUT:true(#t) or false(#f)
+(define spell-checker 
+  (lambda (w)
+   (if (member w dictionary) #t #f) ;; *** FUNCTION BODY IS MISSING *** 
+   ))
+
+;; -----------------------------------------------------
+;; ENCODING FUNCTIONS
+
+;;generate an Caesar Cipher single word encoders
+;;INPUT:a number "n"
+;;OUTPUT:a function, whose input is a word, and output is the encoded word
+(define encode-n
+  (lambda (n);;"n" is the distance, eg. n=3: a->d,b->e,...z->c
+    (lambda (w);;"w" is the word to be encoded
+     (map (shift n ) w) ;; *** FUNCTION BODY IS MISSING ***
+      )))
+
+;;encode a document
+;;INPUT: a document "d" and a "encoder"
+;;OUTPUT: an encoded document using a provided encoder
+(define encode-d;;this encoder is supposed to be the output of "encode-n"
+  (lambda (d encoder)
+    (if (null? d)
+        '()
+        (append (cons (map encoder (car d))
+                      '())
+                (encode-d (cdr d) encoder))
+    )))
+    
+;; -----------------------------------------------------
+;; DECODE FUNCTION GENERATORS
+;; 2 generators should be implemented, and each of them returns a decoder
+
+;;generate a decoder using brute-force-version spell-checker
+;;INPUT:an encoded paragraph "p"
+;;OUTPUT:a decoder, whose input=a word, output=decoded word
+(define Gen-Decoder-A
+  (lambda (p)
+        (encode-n (bruteshift (car p) 0 ))))
+
+
+;;generate a decoder using frequency analysis
+;;INPUT:same as above
+;;OUTPUT:same as above
+
+(define Gen-Decoder-B
+  (lambda (p)
+    (if (null? p)
+        '()
+        (encode-n (eIndex
+               (list
+                (reduce + (counterLtr p 'a) 0)
+                (reduce + (counterLtr p 'b) 0)
+                (reduce + (counterLtr p 'c) 0)
+                (reduce + (counterLtr p 'd) 0)
+                (reduce + (counterLtr p 'e) 0)
+                (reduce + (counterLtr p 'f) 0)
+                (reduce + (counterLtr p 'g) 0)
+                (reduce + (counterLtr p 'h) 0)
+                (reduce + (counterLtr p 'i) 0)
+                (reduce + (counterLtr p 'j) 0)
+                (reduce + (counterLtr p 'k) 0)
+                (reduce + (counterLtr p 'l) 0)
+                (reduce + (counterLtr p 'm) 0)
+                (reduce + (counterLtr p 'n) 0)
+                (reduce + (counterLtr p 'o) 0)
+                (reduce + (counterLtr p 'p) 0)
+                (reduce + (counterLtr p 'q) 0)
+                (reduce + (counterLtr p 'r) 0)
+                (reduce + (counterLtr p 's) 0)
+                (reduce + (counterLtr p 't) 0)
+                (reduce + (counterLtr p 'u) 0)
+                (reduce + (counterLtr p 'v) 0)
+                (reduce + (counterLtr p 'w) 0)
+                (reduce + (counterLtr p 'x) 0)
+                (reduce + (counterLtr p 'y) 0)
+                (reduce + (counterLtr p 'z) 0)
+                )
+               0 0 0)))))
+
+
+;; -----------------------------------------------------
+;; CODE-BREAKER FUNCTION
+
+;;a codebreaker
+;;INPUT: an encoded document(of course by a Caesar's Cipher), a decoder(generated by functions above)
+;;OUTPUT: a decoded document
+(define Code-Breaker
+  (lambda (d decoder)
+    (if (null? d) '()
+        (append (cons (map decoder (car d)) '())
+                (Code-Breaker (cdr d) decoder)))
+     ))
+
+;; -----------------------------------------------------
+;; EXAMPLE APPLICATIONS OF FUNCTIONS
+;;(spell-checker '(h e l l o))
+;;(define add5 (encode-n 5))
+;;(encode-d document add5)
+;;(define decoderSP1 (Gen-Decoder-A paragraph))
+;;(define decoderFA1 (Gen-Decoder-B paragraph))
+;;(Code-Breaker document decoderSP1)
